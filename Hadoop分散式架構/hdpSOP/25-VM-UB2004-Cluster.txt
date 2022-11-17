@@ -1,0 +1,95 @@
+資科平台叢集建置
+
+1. 下載 US2004.CVN80.zip 虛擬主機壓縮檔, 然後解壓縮至使用者家目錄
+
+US2004.CVN80 虛擬主機已安裝 Open JDK 8,libisal-dev,libsnappy-dev 
+$ sudo apt-get install openjdk-8-jdk libisal-dev libsnappy-dev
+ 
+US2004.CVN80 虛擬主機已設定 SSH 
+$ sudo nano /etc/ssh/sshd_config
+.......
+PermitUserEnvironment yes
+
+$ sudo nano /etc/ssh/ssh_config
+.........
+StrictHostKeyChecking no
+
+2. 啟動 US2004.CVN80 虛擬主機, 執行以下設定命令
+C:\Users\bigred>ssh bigred@192.168.61.144
+bigred@192.168.61.144's password:
+
+系統更新
+$ sudo apt update; sudo apt upgrade; sudo apt autoremove
+
+產生公私鑰，並複製公鑰成 authorized_keys
+$ ssh-keygen -t rsa -P ''
+Enter file in which to save the key (/home/bigred/.ssh/id_rsa): 按 Enter
+
+$ cp ~/.ssh/id_rsa.pub ~/.ssh/authorized_keys
+
+$ sudo nano /etc/hosts
+127.0.0.1 localhost
+120.96.143.90 dta1
+120.96.143.91 dtm1
+120.96.143.92 dtm2
+120.96.143.93 dtm3
+120.96.143.94 dtw1
+120.96.143.95 dtw2
+120.96.143.96 dtw3
+120.96.143.97 dtw4
+
+關機
+$ poweroff
+
+3. 在 Windows 命令提示字元 視窗, 執行以下命令
+C:\Users\bigred>mkdir dtvm
+C:\Users\bigred>xcopy US2004.CVN80\US2004.vmwarevm dtvm\alp.dta1\ /E /Y > nul
+C:\Users\bigred>xcopy US2004.CVN80\US2004.vmwarevm dtvm\alp.dtm1\ /E /Y > nul
+C:\Users\bigred>xcopy US2004.CVN80\US2004.vmwarevm dtvm\alp.dtm2\ /E /Y > nul
+C:\Users\bigred>xcopy US2004.CVN80\US2004.vmwarevm dtvm\alp.dtw1\ /E /Y > nul
+C:\Users\bigred>xcopy US2004.CVN80\US2004.vmwarevm dtvm\alp.dtw2\ /E /Y > nul
+C:\Users\bigred>xcopy US2004.CVN80\US2004.vmwarevm dtvm\alp.dtw3\ /E /Y > nul
+
+4. 啟動 VMware Workstation Player, 設定 資科平台 六部虛擬主機
+
+  A. 設定 虛擬主機 名稱 (dta1,dtm1,dtm2,dtw1,dtw2,dtw3)
+  B. 設定 虛擬主機 記憶體 
+     dta1 -> 8G (8192)
+     dtm1 -> 8G
+     dtm2 -> 8G
+     dtw1 -> 10G (10240)
+     dtw2 -> 10G
+     dtw3 -> 10G
+  C. 設定 虛擬主機 網卡
+     Network Adapter -> Bridged
+
+5. 壓縮 資科平台 六部虛擬主機目錄, 使用 scp 命令, 複製到 組員 的落地雲主機
+
+6. 啟動 資科平台 虛擬主機, 然後設定網路系統
+
+在 Windows 命令提示字元 視窗, 執行以下命令, 登入虛擬主機
+c:\>ssh bigred@120.96.143.xx
+
+設定固定 IP 
+$ sudo nano /etc/netplan/00-installer-config.yaml 
+network:
+  version: 2
+  ethernets:
+    ens32:
+      dhcp4: no
+      addresses:
+        - 120.96.143.xx/25
+      gateway4: 120.96.143.254
+      nameservers:
+          addresses: [8.8.8.8, 1.1.1.1]
+
+設定電腦名稱
+$ sudo nano /etc/hostname
+dta1
+
+$ sudo reboot
+                                               
+
+
+
+

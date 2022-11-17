@@ -1,0 +1,345 @@
+資科平台系統建置
+
+下載 資料科技 平台套件檔
+在 Windows 系統的 cmd 視窗, 執行以下命令
+$ ssh bigred@<dta1 IP>
+
+$ cd; wget http://www.oc99.org/zip/vmusdt2022.zip; unzip vmusdt2022.zip 
+
+$ dir vmusdt
+total 341M
+drwxr-sr-x 4 bigred bigred 4.0K Mar 21 20:44 .
+drwxr-sr-x 9 bigred bigred 4.0K Mar 21 22:41 ..
+drwxr-sr-x 2 bigred bigred 4.0K Mar 21 22:17 bin
+-rw-r--r-- 1 bigred bigred 341M Mar 21 20:42 hdp210
+drwxr-sr-x 4 bigred bigred 4.0K Mar 21 22:15 hdp33
+
+$ cd ~/vmusdt; dir hdp33
+total 28K
+drwxr-sr-x 4 bigred bigred 4.0K Mar 21 22:15 .
+drwxr-sr-x 4 bigred bigred 4.0K Mar 21 20:44 ..
+-rwxr-xr-x 1 bigred bigred 2.6K Mar 20 16:52 us.bash
+drwxr-sr-x 2 bigred bigred 4.0K Mar 21 20:36 bin
+drwxr-sr-x 7 bigred bigred 4.0K Mar 20 16:41 conf
+-rw-r--r-- 1 bigred bigred  420 Mar 20 16:10 dlist
+-rw-r--r-- 1 bigred bigred  891 Mar 20 16:51 environment
+
+檢視 下載資科平台套件 清單檔
+$ cat hdp33/dlist
+https://dlcdn.apache.org/hadoop/common/hadoop-3.3.2/hadoop-3.3.2.tar.gz
+https://dlcdn.apache.org/hive/hive-3.1.3/apache-hive-3.1.2-bin.tar.gz
+https://dlcdn.apache.org/pig/pig-0.17.0/pig-0.17.0.tar.gz
+https://dlcdn.apache.org/spark/spark-3.2.1/spark-3.2.1-bin-hadoop3.2.tgz
+https://dlcdn.apache.org/hbase/2.4.12/hbase-2.4.12-bin.tar.gz
+https://dlcdn.apache.org/zookeeper/zookeeper-3.6.3/apache-zookeeper-3.6.3-bin.tar.gz
+
+開始 下載資科平台套件 
+$ ./bin/dtwget 33
+download DT packages ? (YES/NO) YES
+hadoop-3.3.2.tar.gz ok
+apache-hive-3.1.3-bin.tar.gz ok
+pig-0.17.0.tar.gz ok
+spark-3.2.1-bin-hadoop3.2.tgz ok
+hbase-2.4.12-bin.tar.gz ok
+apache-zookeeper-3.6.3-bin.tar.gz ok
+
+[註] dtwget 主要是下載 DT 套件檔至 ~/vmalpdt/hdp33/opt 這目錄
+
+$ ./bin/dtcopy 33
+dta1 /opt/ ok
+dta1 /opt/bin ok
+dta1 /etc/hosts ok
+
+dtm1 /opt/ ok
+dtm1 /opt/bin ok
+dtm1 /etc/hosts ok
+
+......
+
+[註] dtcopy 主要是覆製 dta1 主機 /home/bigred/vmusdt/hdp33/opt 這目錄至 dta1, dtm1, dtm2, dtw1, dtw2, dtw3 這三部主機的 /opt 目錄
+
+
+複製 資料科技平台 設定檔
+-------------------------------------------------------------------------------------------
+$ cat ~/vmalpdt/hdp33/us.bash
+#!/bin/bash
+adminuser=bigred
+export JAVA_HOME=/usr/lib/jvm/java-1.8-openjdk
+export HADOOP_HOME=/opt/hadoop-3.3.2
+export HADOOP_LOG_DIR=/tmp
+export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop/
+export LD_LIBRARY_PATH=$HADOOP_HOME/lib/native/
+export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
+export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib/native"
+# export HADOOP_USER_CLASSPATH_FIRST=true
+[ -z $HADOOP_USER_NAME ] && [ $SHELL == '/bin/bash' ] && declare -r HADOOP_USER_NAME=$USER
+
+# JobHistory log file path, 會自動產生目錄
+# export HADOOP_MAPRED_LOG_DIR="/home/bigred/jhslog"
+
+export YARN_HOME=$HADOOP_HOME
+export HADOOP_YARN_HOME=$HADOOP_HOME
+export YARN_LOG_DIR=/tmp
+
+# hadoop 3.2.1 及 3.1.3 這二個版本只要執行檔案傳送命令就會出現以下訊息
+# hadoop fs -put -f /etc/passwd /tmp
+# SASL encryption trust check: localHostTrusted = false, remoteHostTrusted = false
+export HADOOP_ROOT_LOGGER="WARN,console"
+
+export PIG_HOME=/opt/pig-0.17.0
+export PIG_HEAPSIZE=512
+export HIVE_HOME=/opt/apache-hive-3.1.3-bin
+
+export PATH=/opt/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH=/usr/lib/jvm/java-1.8-openjdk/bin:/home/bigred/dt/bin:$PATH
+export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$PIG_HOME/bin:$HIVE_HOME/bin
+
+export HBASE_HOME=/opt/hbase-2.4.12
+export HBASE_CONF_DIR=/opt/hbase-2.4.12/conf
+export ZOOKEEPER_HOME=/opt/apache-zookeeper-3.6.3-bin
+export ZOO_LOG_DIR=/tmp/logs
+export PATH=$PATH:$ZOOKEEPER_HOME/bin:$HBASE_HOME/bin
+
+#export ZEPPELIN_HOME=/opt/zeppelin-0.9.0-bin-all
+#export PATH=$PATH:$ZEPPELIN_HOME/bin
+
+export SPARK_HOME=/opt/spark-3.2.1-bin-hadoop3.2
+export SPARK_CONF_DIR=$SPARK_HOME/conf
+export PYSPARK_PYTHON=/usr/bin/python3
+export PATH=$SPARK_HOME/bin:$SPARK_HOME/sbin:$PATH
+
+if [ -d /opt/jupyter/miniconda3/bin ];then
+   export ANACONDA_ROOT=/opt/jupyter/miniconda3
+   export PATH=$ANACONDA_ROOT/bin:$PATH
+   export PYSPARK_PYTHON=$ANACONDA_ROOT/bin/python
+fi
+
+if [ "$USER" != "" ]; then
+
+   [ -f /home/$USER/dkc.env ] && source /home/$USER/dkc.env
+
+   if [ ! -d metastore_db ]; then
+      #hn=$(hostname)
+      #if [ ${hn:0:3} == "adm" ] || [ ${hn:0:2} == "ds" ] || [ ${hn:0:8} == "zeppelin" ]; then
+      echo -n "build derby database ..."
+      schematool -initSchema -dbType derby &>/dev/null
+      if [ "$?" == "0" ]; then
+         echo " ok"
+         echo "set hive.cli.print.current.db=true;" > .hiverc
+         echo "set hive.metastore.warehouse.dir=/user/$USER/hive;" >> .hiverc
+         echo "set hive.exec.scratchdir=/user/$USER/tmp;" >> .hiverc
+      fi
+   fi
+
+   alias nano='nano -Ynone'
+   alias dir='ls -alh'
+   alias ssh='ssh -q'
+fi
+
+$ cat ~/vmusdt/hdp33/environment
+JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/jre
+HADOOP_HOME=/opt/hadoop-3.3.2
+HADOOP_LOG_DIR=/tmp
+LD_LIBRARY_PATH=/opt/hadoop-3.3.2/lib/native/
+HADOOP_COMMON_LIB_NATIVE_DIR=/opt/hadoop-3.3.2/lib/native
+HADOOP_OPTS=-Djava.library.path=/opt/hadoop-3.3.2/lib/native
+HADOOP_MAPRED_LOG_DIR=/home/bigred/jhslog
+YARN_HOME=/opt/hadoop-3.3.2
+YARN_LOG_DIR=/tmp
+PIG_HOME=/opt/pig-0.17.0/
+PIG_HEAPSIZE=512
+SPARK_HOME=/opt/spark-3.2.1-bin-hadoop3.2
+HIVE_HOME=/opt/apache-hive-3.1.3-bin
+HBASE_HOME=/opt/hbase-2.4.12
+HBASE_CONF_DIR=/opt/hbase-2.4.12/conf
+HBASE_LOG_DIR=/tmp
+ZOO_LOG_DIR=/tmp/logs
+PATH=/root/bin:/opt/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/hadoop-3.3.2/bin:/opt/hadoop-3.3.2/sbin:/opt/pig-0.17.0/bin:/opt/apache-hive-3.1.3-bin/bin:/opt/spark-3.2.1-bin-hadoop3.2/bin:/opt/spark-3.2.1-bin-hadoop3.2/sbin:/opt/hbase-2.4.12/bin:/opt/apache-zookeeper-3.6.3-bin/bin
+
+資料科技平台 設定檔目錄
+---------------------------------------------------------------------------------
+$ dir ~/vmusdt/hdp33/conf
+total 28K
+drwxr-sr-x 7 bigred bigred 4.0K Mar 20 16:41 .
+drwxr-sr-x 5 bigred bigred 4.0K Mar 21 22:44 ..
+drwxr-sr-x 2 bigred bigred 4.0K Feb  7 00:00 apache-hive-3.1.3-bin
+drwxr-sr-x 2 bigred bigred 4.0K Feb  7 00:00 apache-zookeeper-3.6.3-bin
+drwxr-sr-x 2 bigred bigred 4.0K Feb  7 00:00 hadoop-3.3.2
+drwxr-sr-x 2 bigred bigred 4.0K Feb  7 00:00 hbase-2.4.12
+drwxr-sr-x 2 bigred bigred 4.0K Feb 10 19:41 spark-3.2.1-bin-hadoop3.2
+
+
+Hadoop 設定檔
+$ cat ~/vmusdt/hdp33/conf/hadoop-3.3.2/core-site.xml 
+<?xml version="1.0" encoding="UTF-8"?>
+........
+<configuration>
+ <property>
+    <name>fs.defaultFS</name>
+    <value>hdfs://dtm1:8020</value>
+ </property>
+ <property>
+    <name>fs.default.name</name>
+    <value>hdfs://dtm1:8020</value>
+ </property>
+ <property>
+    <name>io.compression.codecs</name>
+<value>org.apache.hadoop.io.compress.BZip2Codec,org.apache.hadoop.io.compress.GzipCodec,org.apache.hadoop.io.compress.SnappyCodec</value>
+ </property>
+ <property>
+    <name>hadoop.user.group.static.mapping.overrides</name>
+    <value>rbean=soup;gbean=soup,rice;ybean=rice</value>
+ </property>
+</configuration>
+
+
+$ cat ~/vmusdt/hdp33/conf/hadoop-3.3.2/hdfs-site.xml 
+<?xml version="1.0" encoding="UTF-8"?>
+.........
+<configuration>
+  <property>
+    <name>dfs.replication</name>
+    <value>2</value>
+  </property>
+  <property>
+    <name>dfs.namenode.name.dir</name>
+    <value>file:/home/bigred/nn</value>
+  </property>
+  <property>
+    <name>dfs.datanode.data.dir</name>
+    <value>file:/home/bigred/dn</value>
+  </property>
+ <property>
+    <name>dfs.permissions.superusergroup</name>
+    <value>bigboss</value>
+  </property>
+   ...........
+</configuration>
+
+
+$ cat ~/vmusdt/hdp33/conf/hadoop-3.3.2/hadoop-env.sh
+.......
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/jre
+.......
+export HADOOP_HEAPSIZE=256
+........
+export HADOOP_LOG_DIR=/tmp
+
+
+[註] Java 7 was end-of-lifed in April 2015, meaning Oracle would no longer publicly support it with security fixes.
+
+
+YARN 設定檔
+$ cat ~/vmusdt/hdp33/conf/hadoop-3.3.2/yarn-site.xml
+......
+ <property>
+    <name>yarn.nodemanager.resource.memory-mb</name>
+    <value>2560</value>
+  </property>
+  <property>
+    <name>yarn.nodemanager.resource.cpu-vcores</name>
+    <value>2</value>
+  </property>
+.......
+             
+$ cat ~/vmusdt/hdp33/conf/hadoop-3.3.2/yarn-site.xml
+........
+  <property>
+    <name>yarn.resourcemanager.webapp.address</name>
+    <value>dtm2:8088</value>
+  </property>
+  <property>
+    <name>yarn.resourcemanager.hostname</name>
+    <value>dtm2</value>
+  </property>
+
+......
+
+  <property>
+    <name>yarn.scheduler.minimum-allocation-mb</name>
+    <value>512</value>
+  </property>
+  <property>
+    <name>yarn.scheduler.maximum-allocation-mb</name>
+    <value>896</value>
+  </property>
+  <property>
+    <name>yarn.scheduler.minimum-allocation-vcores</name>
+    <value>1</value>
+  </property>
+  <property>
+    <name>yarn.scheduler.maximum-allocation-vcores</name>
+    <value>1</value>
+  </property>
+..........
+
+
+$ cat ~/vmusdt/hdp33/conf/hadoop-3.3.2/mapred-site.xml
+    ......
+   <property>
+      <name>yarn.app.mapreduce.am.resource.mb</name>
+      <value>512</value>
+   </property>
+   <property>
+      <name>yarn.app.mapreduce.am.command-opts</name>
+      <value>-Xmx384m</value>
+   </property>
+   <property>
+      <name>mapreduce.reduce.memory.mb</name>
+      <value>512</value>
+   </property>
+
+   <property>
+      <name>mapreduce.reduce.java.opts</name>
+      <value>-Xmx384m</value>
+   </property>
+
+   <property>
+      <name>mapreduce.map.memory.mb</name>
+      <value>512</value>
+   </property>
+
+[註] Just make sure you set java.opts to 20-25% less than memory.mb
+
+複製 資料科技 平台 設定檔
+$ ./bin/dtconf 33
+dta1: apache-hive-3.1.3-bin config ok
+dta1: apache-zookeeper-3.6.3-bin config ok
+dta1: hadoop-3.3.2 config ok
+dta1: hbase-2.4.12 config ok
+dta1: spark-3.2.1-bin-hadoop3.2 config ok
+dta1 /etc/profile ok
+
+dtm1: apache-hive-3.1.3-bin config ok
+dtm1: apache-zookeeper-3.6.3-bin config ok
+dtm1: hadoop-3.3.2 config ok
+dtm1: hbase-2.4.12 config ok
+dtm1: spark-3.2.1-bin-hadoop3.2 config ok
+dtm1 /etc/profile ok
+........
+
+
+重新啟動 資料科技 平台
+$ ssh dtm1 sudo reboot
+$ ssh dtm2 sudo reboot
+$ ssh dtw1 sudo reboot
+$ ssh dtw2 sudo reboot
+$ ssh dtw3 sudo reboot
+$ sudo reboot
+
+檢測 資料科技 平台
+$ dthdpchk 33
+[dta1]
+Hadoop 3.3.2
+Native library checking:
+hadoop:  true /opt/hadoop-3.3.2/lib/native/libhadoop.so
+zlib:    true /lib/x86_64-linux-gnu/libz.so.1
+zstd  :  true /lib/x86_64-linux-gnu/libzstd.so.1
+bzip2:   true /lib/x86_64-linux-gnu/libbz2.so.1
+openssl: false Cannot load libcrypto.so (libcrypto.so: cannot open shared object file: No such file or directory)!
+ISA-L:   false Loading ISA-L failed: Failed to load libisal.so.2 (libisal.so.2: cannot open shared object file: No such file or directory)
+PMDK:    false The native code was built without PMDK support.
+.......
+
+
+
